@@ -1,0 +1,131 @@
+name: Build & publish Docker images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - "init-db/**"
+      - ".github/workflows/build-images.yml"
+  pull_request:
+    paths:
+      - "docker/**"
+      - "init-db/**"
+      - ".github/workflows/build-images.yml"
+  workflow_dispatch:
+  schedule:
+    # Rebuild semanal: toma los parches de seguridad de las imágenes base
+    # sin cambiar de versión de aplicación.
+    - cron: "0 6 * * 1"
+
+# Los tokens del workflow arrancan sin permisos; cada job pide lo mínimo.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          recursive: true
+          dockerfile: "docker/*.Dockerfile"
+
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+      packages: write        # push a GHCR
+      security-events: write # subir resultados de Trivy a la pestaña Security
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - postgres
+          - redis
+          - evolution-api
+          - n8n
+          - directus
+          - chatwoot
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login a GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata (tags y labels OCI)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+          labels: |
+            org.opencontainers.image.title=wamio-${{ matrix.service }}
+            org.opencontainers.image.description=Imagen de ${{ matrix.service }} para el stack Wamio
+
+      # Se construye local (sin push) para poder escanear antes de publicar.
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.service }}.Dockerfile
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:scan
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+      - name: Escaneo de vulnerabilidades (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}:scan
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          # Informativo, no bloqueante: las imágenes upstream suelen arrastrar
+          # CVEs sin fix. Los resultados quedan en Security > Code scanning.
+          exit-code: "0"
+
+      - name: Subir reporte a GitHub Security
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
+
+      # Reusa la caché del build anterior: el push es casi instantáneo.
+      # SBOM + provenance publicados junto con la imagen.
+      - name: Push a GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.service }}.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}

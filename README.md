@@ -15,9 +15,39 @@ Mercado Pago, todo orquestado sin depender de la API oficial de Meta.
 | `directus`    | Panel admin auto-generado sobre la DB `wamio` (productos, turnos) |
 | `chatwoot`    | *(opcional)* bandeja de atención humana para handoff              |
 
-Las imágenes están pineadas a versiones concretas en el `docker-compose.yml`.
-Para actualizar, cambiá la versión a mano y revisá el changelog del servicio
+## Imágenes Docker y CI
+
+Las imágenes **no se bajan directo de Docker Hub**: se construyen en GitHub
+Actions ([`build-images.yml`](.github/workflows/build-images.yml)) a partir de
+los Dockerfiles de [`docker/`](docker/) y se publican en GHCR bajo
+`ghcr.io/pel-matiasvaldivia/wamio/<servicio>`. El compose apunta a esas
+imágenes, con `WAMIO_IMAGE_TAG` del `.env` (por defecto `latest`; también se
+publica un tag por SHA de commit para deploys reproducibles).
+
+El pipeline por cada servicio:
+- **Lint** de los Dockerfiles con hadolint.
+- **Build** con caché de capas (rápido: son wrappers finos sobre las imágenes
+  oficiales pineadas, variantes alpine/slim, footprint mínimo).
+- **Escaneo de vulnerabilidades** con Trivy (CRITICAL/HIGH con fix disponible);
+  los resultados quedan en la pestaña **Security → Code scanning** del repo.
+- **Push a GHCR** con SBOM y provenance (attestations de supply chain), solo en
+  `main` — los PRs construyen y escanean pero no publican.
+- **Rebuild semanal** programado para absorber parches de seguridad de las
+  imágenes base sin cambiar de versión de aplicación.
+
+Las versiones upstream se pinean en los Dockerfiles (`docker/*.Dockerfile`).
+Para actualizar, cambiá la versión ahí y revisá el changelog del servicio
 (Evolution API en particular renombra variables de entorno entre versiones).
+
+Notas de uso:
+- Si los paquetes de GHCR quedan **privados** (default), el servidor necesita
+  `docker login ghcr.io` con un token con scope `read:packages`. Alternativa:
+  hacer públicos los paquetes desde la página de cada package en GitHub.
+- Sin acceso a GHCR (o para probar cambios locales), cada servicio tiene
+  `build:` como fallback: `docker compose build && docker compose up -d`.
+- Los scripts de `init-db/` van **horneados en la imagen de postgres** (ya no
+  se montan por bind mount): si los cambiás, se necesita rebuild + recrear el
+  volumen para que corran de nuevo (solo aplican en la primera inicialización).
 
 ## Arranque rápido
 
