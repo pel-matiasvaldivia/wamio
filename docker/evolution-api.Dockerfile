@@ -1,4 +1,5 @@
 # Wrapper sobre Evolution API pineado: pasar por GHCR permite escanear la
 # imagen en CI y controlar cuándo se adopta una versión nueva (upstream
 # renombra variables de entorno entre releases).
-FROM atendai/evolution-api:v2.2.3
+# Ojo: el proyecto movió sus imágenes de atendai/ a evoapicloud/ en Docker Hub.
+FROM evoapicloud/evolution-api:v2.3.7
