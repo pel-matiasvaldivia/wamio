@@ -143,3 +143,72 @@ Servicios disponibles:
 
 - Programá ese comando como cron diario y guardá los `.sql` fuera del servidor
   (S3, otro disco, etc.).
+
+## Troubleshooting
+
+### `invalid port number in database URL` / `ECONNREFUSED 127.0.0.1:6379` / `database "x" does not exist`
+
+Casi siempre es **un caracter especial en la contraseña**. `POSTGRES_PASSWORD`
+y `REDIS_PASSWORD` se inyectan dentro de cadenas de conexión con formato URL
+(`postgresql://user:PASS@host` y `redis://:PASS@host`). Si la contraseña
+contiene `# @ : / ? & % +` o espacios, el parser de la URL se rompe:
+
+- **Evolution API** → `P1013: The provided database string is invalid. invalid
+  port number in database URL` (el `#` corta la URL antes del `:5432`).
+- **Directus** → `The URL redis://:...@redis:6379/2 is invalid` y como fallback
+  intenta `127.0.0.1:6379` → `ECONNREFUSED`.
+
+**Solución:** usá contraseñas solo alfanuméricas (`openssl rand -hex 32`).
+Como la contraseña de Postgres se fija cuando el volumen se inicializa por
+primera vez, cambiarla en el `.env` no basta: hay que reinicializar el volumen.
+
+### `database "n8n" / "wamio" / "evolution" does not exist`
+
+Los scripts de `init-db/` **solo corren la primera vez que el volumen de
+Postgres está vacío**. Si el stack levantó alguna vez con el volumen ya
+inicializado (o antes de que los scripts estuvieran horneados en la imagen),
+las bases nunca se crearon y todos los servicios fallan al conectar.
+
+**Reset limpio (borra los volúmenes; hacelo solo si todavía no hay datos que
+te importen — WhatsApp sin vincular, Directus sin cargar, etc.):**
+
+```bash
+# 1) Arreglá las contraseñas en .env (alfanuméricas, sin caracteres de URL)
+openssl rand -hex 32   # generá una para POSTGRES_PASSWORD
+openssl rand -hex 32   # y otra para REDIS_PASSWORD
+
+# 2) Bajá el stack y BORRÁ los volúmenes (re-crea las bases desde init-db/)
+docker compose down -v
+
+# 3) Traé las imágenes y levantá de nuevo
+docker compose pull
+docker compose up -d
+
+# 4) Verificá que las bases se crearon
+docker exec wamio_postgres psql -U "$(grep '^POSTGRES_USER=' .env | cut -d= -f2)" -lqt | cut -d'|' -f1
+#   Deberías ver: evolution, n8n, wamio, chatwoot
+```
+
+Si el stack **ya tiene datos** que no querés perder, en lugar de `down -v`:
+creá las bases a mano y actualizá la contraseña del rol —
+`docker exec -it wamio_postgres psql -U <user> -c "CREATE DATABASE n8n;"`
+(idem `wamio`, `evolution`, `chatwoot`) y
+`ALTER USER <user> WITH PASSWORD '<nueva-alfanumérica>';` — y dejá esa misma
+contraseña en el `.env`.
+
+### Detrás de Nginx Proxy Manager (dominio público)
+
+Con el stack detrás de NPM en `https://tu-dominio`, ajustá en el `.env` las
+variables de n8n para que los webhooks usen la URL pública:
+
+```
+N8N_HOST=tu-dominio.com
+N8N_PROTOCOL=https
+N8N_WEBHOOK_URL=https://tu-dominio.com/
+```
+
+En NPM, cada Proxy Host apunta al contenedor por nombre y puerto interno
+(`wamio_n8n:5678`, `wamio_evolution_api:8080`, `wamio_directus:8055`) con SSL y
+"Websockets Support" activado (n8n y Directus lo necesitan). Como los 4
+servicios exponen puertos distintos, usá un subdominio por servicio
+(ej. `n8n.`, `api.`, `admin.`) en vez de un solo dominio para todos.
