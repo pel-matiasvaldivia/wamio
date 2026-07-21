@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wamio — Vendé por WhatsApp en piloto automático</title>
+<meta name="description" content="Wamio convierte tu WhatsApp en una máquina de vender: catálogo, turnos y cobros automáticos, 24/7. Ideal para veterinarias, petshops y farmacias de barrio." />
+<style>
+  :root {
+    --verde:   #25D366;
+    --verde-d: #128C5E;
+    --menta:   #DFFdf0;
+    --crema:   #FFF9F0;
+    --coral:   #FF6B6B;
+    --amarillo:#FFD43B;
+    --violeta: #7C5CFC;
+    --tinta:   #163832;
+    --gris:    #5B6B66;
+    --blanco:  #FFFFFF;
+    --sombra:  0 18px 40px -18px rgba(22,56,50,.35);
+    --radio:   26px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+    color: var(--tinta);
+    background: var(--crema);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { line-height: 1.1; letter-spacing: -.5px; }
+
+  a { text-decoration: none; color: inherit; }
+
+  .wrap { width: min(1120px, 92vw); margin-inline: auto; }
+
+  /* ---------- Botones ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: .55rem;
+    font-size: 1.05rem; font-weight: 700;
+    padding: .95rem 1.8rem; border-radius: 999px;
+    border: 3px solid var(--tinta);
+    cursor: pointer; transition: transform .15s ease, box-shadow .15s ease;
+    box-shadow: 5px 6px 0 var(--tinta);
+  }
+  .btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 8px 0 var(--tinta); }
+  .btn:active { transform: translate(2px,3px); box-shadow: 2px 2px 0 var(--tinta); }
+  .btn--verde  { background: var(--verde);  color: #06251a; }
+  .btn--blanco { background: var(--blanco); color: var(--tinta); }
+  .btn--coral  { background: var(--coral);  color: #fff; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,249,240,.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid rgba(22,56,50,.08);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; padding: .9rem 0; }
+  .logo { display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1.5rem; }
+  .logo .dot {
+    width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--verde); border: 2.5px solid var(--tinta); font-size: 1.2rem;
+    transform: rotate(-6deg);
+  }
+  .nav-links { display: flex; gap: 1.6rem; align-items: center; font-weight: 600; }
+  .nav-links a.pill { padding: .5rem 1.1rem; border-radius: 999px; border: 2.5px solid var(--tinta); background: var(--amarillo); box-shadow: 3px 3px 0 var(--tinta); }
+  @media (max-width: 720px){ .nav-links a:not(.pill){ display:none; } }
+
+  /* ---------- Hero ---------- */
+  header { position: relative; padding: clamp(3rem,7vw,6rem) 0 4rem; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(8px); opacity: .5; z-index: 0; }
+  .blob.b1 { width: 320px; height: 320px; background: var(--menta);   top: -60px; right: -70px; }
+  .blob.b2 { width: 240px; height: 240px; background: #FFE9A8;        bottom: -40px; left: -60px; opacity:.6;}
+  .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 3rem; align-items: center; }
+  @media (max-width: 860px){ .hero-grid { grid-template-columns: 1fr; text-align: center; } }
+
+  .tag {
+    display: inline-flex; align-items:center; gap:.5rem; font-weight: 700; font-size:.9rem;
+    background: var(--violeta); color: #fff; padding: .4rem 1rem; border-radius: 999px;
+    border: 2.5px solid var(--tinta); box-shadow: 3px 3px 0 var(--tinta); transform: rotate(-2deg);
+  }
+  .hero h1 { font-size: clamp(2.4rem, 5.2vw, 4rem); margin: 1.2rem 0; }
+  .hero h1 .hl { position: relative; white-space: nowrap; }
+  .hero h1 .hl::after {
+    content:""; position:absolute; left:-4px; right:-4px; bottom:4px; height: 38%;
+    background: var(--amarillo); z-index:-1; border-radius: 6px; transform: rotate(-1.5deg);
+  }
+  .hero p.lead { font-size: 1.2rem; color: var(--gris); max-width: 34ch; margin-bottom: 1.8rem; }
+  @media (max-width: 860px){ .hero p.lead{ margin-inline:auto; } }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+  @media (max-width: 860px){ .hero-cta{ justify-content:center; } }
+  .microcopy { margin-top: 1rem; font-size: .92rem; color: var(--gris); font-weight:600; }
+
+  /* Teléfono / chat mockup */
+  .phone {
+    position: relative; width: 300px; max-width: 78vw; margin-inline: auto;
+    background: var(--blanco); border: 4px solid var(--tinta); border-radius: 38px;
+    padding: 14px; box-shadow: var(--sombra); transform: rotate(2deg);
+  }
+  .phone::before { content:""; position:absolute; top:14px; left:50%; transform:translateX(-50%); width:90px; height:8px; background: var(--tinta); border-radius: 999px; }
+  .screen { background: #EAF7EF; border-radius: 26px; padding: 30px 14px 16px; }
+  .chat-top { display:flex; align-items:center; gap:.6rem; padding:.4rem .5rem 1rem; border-bottom:2px dashed rgba(22,56,50,.15); margin-bottom:1rem; }
+  .chat-top .av { width:34px; height:34px; border-radius:50%; background: var(--verde); display:grid; place-items:center; border:2px solid var(--tinta); }
+  .chat-top strong { font-size:.95rem; }
+  .chat-top span { font-size:.72rem; color: var(--verde-d); font-weight:700; }
+  .bubble { max-width: 82%; padding: .6rem .85rem; border-radius: 16px; font-size: .9rem; margin-bottom: .6rem; box-shadow: 0 2px 6px rgba(0,0,0,.06); animation: pop .5s ease backwards; }
+  .bubble.in  { background: #fff; border-bottom-left-radius: 4px; }
+  .bubble.out { background: var(--verde); color:#06251a; margin-left:auto; border-bottom-right-radius: 4px; font-weight:600; }
+  .bubble.b-2{ animation-delay:.5s } .bubble.b-3{ animation-delay:1s } .bubble.b-4{ animation-delay:1.5s }
+  .pay { display:flex; align-items:center; gap:.5rem; background:#fff; border:2px solid var(--tinta); border-radius:14px; padding:.5rem .7rem; font-size:.82rem; font-weight:700; margin-top:.2rem; animation: pop .5s ease 2s backwards;}
+  .pay .chip{ background:var(--violeta); color:#fff; padding:.15rem .5rem; border-radius:8px; font-size:.68rem; }
+  @keyframes pop { from { opacity:0; transform: translateY(8px) scale(.96); } to { opacity:1; transform:none; } }
+
+  /* ---------- Tira de logos / rubros ---------- */
+  .strip { background: var(--tinta); color: #EAF7EF; padding: 1.1rem 0; overflow: hidden; }
+  .strip .row { display:flex; gap: 3rem; white-space: nowrap; font-weight: 700; animation: slide 22s linear infinite; }
+  .strip .row span { display:inline-flex; gap:.5rem; align-items:center; opacity:.9; }
+  @keyframes slide { from { transform: translateX(0);} to { transform: translateX(-50%);} }
+
+  /* ---------- Secciones ---------- */
+  section.pad { padding: clamp(3.5rem, 7vw, 6rem) 0; }
+  .eyebrow { font-weight: 800; color: var(--verde-d); text-transform: uppercase; letter-spacing: 1px; font-size:.85rem; }
+  .sec-title { font-size: clamp(1.9rem, 4vw, 2.9rem); margin: .5rem 0 1rem; }
+  .sec-intro { color: var(--gris); font-size: 1.1rem; max-width: 54ch; }
+  .center { text-align:center; } .center .sec-intro{ margin-inline:auto; }
+
+  /* Dolor -> solución */
+  .beneficios { display:grid; grid-template-columns: repeat(3,1fr); gap: 1.4rem; margin-top: 2.6rem; }
+  @media (max-width: 860px){ .beneficios{ grid-template-columns:1fr; } }
+  .card {
+    background: var(--blanco); border: 3px solid var(--tinta); border-radius: var(--radio);
+    padding: 1.7rem; box-shadow: 6px 7px 0 var(--tinta); transition: transform .18s ease;
+  }
+  .card:hover { transform: translateY(-6px); }
+  .card .ico { width: 58px; height: 58px; border-radius: 16px; display:grid; place-items:center; font-size: 1.7rem; border:2.5px solid var(--tinta); margin-bottom: 1rem; }
+  .card h3 { font-size: 1.25rem; margin-bottom: .5rem; }
+  .card p { color: var(--gris); font-size:.98rem; }
+  .card .antes { display:inline-block; margin-top:.9rem; font-size:.82rem; font-weight:700; color: var(--coral); }
+  .i-verde{ background: var(--menta);} .i-amar{ background:#FFE9A8;} .i-viol{ background:#E8E1FF;} .i-coral{background:#FFE0E0;} .i-cielo{background:#D9F0FF;} .i-lima{background:#E8F8C8;}
+
+  /* Cómo funciona */
+  .pasos { display:grid; grid-template-columns: repeat(4,1fr); gap: 1.2rem; margin-top: 2.8rem; counter-reset: paso; }
+  @media (max-width: 860px){ .pasos{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px){ .pasos{ grid-template-columns: 1fr; } }
+  .paso { position: relative; background: var(--blanco); border: 3px solid var(--tinta); border-radius: var(--radio); padding: 2.4rem 1.3rem 1.3rem; box-shadow: 5px 6px 0 var(--tinta); }
+  .paso::before {
+    counter-increment: paso; content: counter(paso);
+    position: absolute; top: -20px; left: 20px; width: 44px; height: 44px; border-radius: 50%;
+    background: var(--amarillo); border: 3px solid var(--tinta); display:grid; place-items:center;
+    font-weight: 800; font-size: 1.2rem; box-shadow: 3px 3px 0 var(--tinta);
+  }
+  .paso h3 { font-size: 1.1rem; margin-bottom:.4rem; }
+  .paso p { font-size:.92rem; color: var(--gris); }
+
+  /* Números */
+  .stats-band { background: linear-gradient(135deg, var(--verde), var(--verde-d)); border-block: 4px solid var(--tinta); }
+  .stats { display:grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; text-align:center; color:#eafff5; }
+  @media (max-width: 720px){ .stats{ grid-template-columns:1fr; gap:2rem; } }
+  .stats .n { font-size: clamp(2.6rem,6vw,3.6rem); font-weight: 800; color:#fff; }
+  .stats .l { font-weight:600; opacity:.95; }
+
+  /* Para quién */
+  .rubros { display:flex; flex-wrap:wrap; gap: .9rem; margin-top: 2rem; }
+  .rubro { background:#fff; border:2.5px solid var(--tinta); border-radius:999px; padding:.7rem 1.3rem; font-weight:700; box-shadow:3px 3px 0 var(--tinta); display:flex; gap:.5rem; align-items:center; }
+
+  /* Diferencial / self-hosted */
+  .split { display:grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items:center; }
+  @media (max-width: 860px){ .split{ grid-template-columns:1fr; } }
+  .checklist { list-style:none; display:grid; gap: 1rem; margin-top: 1.4rem; }
+  .checklist li { display:flex; gap:.8rem; align-items:flex-start; font-size:1.05rem; }
+  .checklist .tick { flex:none; width:30px; height:30px; border-radius:9px; background:var(--verde); border:2.5px solid var(--tinta); display:grid; place-items:center; font-weight:800; color:#06251a; }
+  .card-highlight { background: var(--menta); border:3px solid var(--tinta); border-radius: var(--radio); padding: 2rem; box-shadow: var(--sombra); }
+  .card-highlight .big { font-size: 1.4rem; font-weight: 800; margin-bottom: .6rem; }
+
+  /* CTA final */
+  .cta-final { position: relative; }
+  .cta-box {
+    background: var(--amarillo); border: 4px solid var(--tinta); border-radius: 34px;
+    padding: clamp(2.4rem,5vw,3.6rem); text-align:center; box-shadow: var(--sombra); position:relative; overflow:hidden;
+  }
+  .cta-box h2 { font-size: clamp(2rem,4.5vw,3rem); margin-bottom: .8rem; }
+  .cta-box p { font-size:1.15rem; color:#5a4b12; max-width: 46ch; margin: 0 auto 1.8rem; font-weight:600; }
+  .cta-box .btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+  .cta-box .spark { position:absolute; font-size:2rem; opacity:.7; }
+
+  /* Footer */
+  footer { background: var(--tinta); color: #cfe9df; padding: 3rem 0 2rem; margin-top: 4rem; }
+  .foot-grid { display:flex; justify-content:space-between; gap:2rem; flex-wrap:wrap; align-items:center; }
+  footer .logo { color:#fff; }
+  footer a:hover { color:#fff; }
+  .foot-note { margin-top:2rem; padding-top:1.4rem; border-top:1px solid rgba(255,255,255,.15); font-size:.85rem; opacity:.7; }
+
+  .float { animation: float 4s ease-in-out infinite; }
+  @keyframes float { 0%,100%{ transform: translateY(0) rotate(2deg);} 50%{ transform: translateY(-12px) rotate(2deg);} }
+</style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="wrap">
+      <a href="#" class="logo"><span class="dot">💬</span> Wamio</a>
+      <div class="nav-links">
+        <a href="#beneficios">Beneficios</a>
+        <a href="#como">Cómo funciona</a>
+        <a href="#quien">Para quién</a>
+        <a href="#empezar" class="pill">Probar gratis ✦</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header>
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <div class="wrap hero-grid hero">
+      <div>
+        <span class="tag">🚀 Tu WhatsApp, ahora vende solo</span>
+        <h1>Convertí tu WhatsApp en una <span class="hl">máquina de vender</span> 24/7</h1>
+        <p class="lead">Catálogo, turnos y cobros automáticos por chat. Wamio atiende, reserva y cobra por vos — incluso mientras dormís. 😴💸</p>
+        <div class="hero-cta">
+          <a href="#empezar" class="btn btn--verde">Quiero vender más →</a>
+          <a href="#como" class="btn btn--blanco">Ver cómo funciona</a>
+        </div>
+        <p class="microcopy">✅ Sin comisiones por venta · ✅ Sin código · ✅ Tus datos, en tu servidor</p>
+      </div>
+
+      <!-- Chat mockup -->
+      <div class="phone float">
+        <div class="screen">
+          <div class="chat-top">
+            <span class="av">🐶</span>
+            <div>
+              <strong>Peluquería Firulais</strong><br>
+              <span>● en línea · responde al toque</span>
+            </div>
+          </div>
+          <div class="bubble in b-1">Hola! Tenés turno para baño el jueves? 🛁</div>
+          <div class="bubble out b-2">¡Hola Ana! 🙌 El jueves tengo libre a las 11:00 y 16:30. ¿Cuál te queda mejor?</div>
+          <div class="bubble in b-3">Las 11 🙌</div>
+          <div class="bubble out b-4">¡Reservado! ✨ Te dejo el link para señar el turno 👇</div>
+          <div class="pay">💳 Pagar seña $2.500 <span class="chip">Mercado Pago</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STRIP -->
+  <div class="strip">
+    <div class="row">
+      <span>🐾 Veterinarias</span><span>🛒 Petshops</span><span>💊 Farmacias</span><span>✂️ Peluquerías</span><span>📅 Turnos</span><span>💳 Cobros MP</span><span>🤖 Respuestas 24/7</span>
+      <span>🐾 Veterinarias</span><span>🛒 Petshops</span><span>💊 Farmacias</span><span>✂️ Peluquerías</span><span>📅 Turnos</span><span>💳 Cobros MP</span><span>🤖 Respuestas 24/7</span>
+    </div>
+  </div>
+
+  <!-- BENEFICIOS -->
+  <section class="pad" id="beneficios">
+    <div class="wrap center">
+      <span class="eyebrow">Por qué vas a vender más</span>
+      <h2 class="sec-title">Menos "te aviso", más "vendido" 🤝</h2>
+      <p class="sec-intro">Cada mensaje sin responder es una venta que se va a la competencia. Wamio se encarga de que eso no pase.</p>
+    </div>
+    <div class="wrap beneficios">
+      <div class="card">
+        <div class="ico i-verde">⚡</div>
+        <h3>Respondé al instante, siempre</h3>
+        <p>El cliente pregunta a las 23hs y Wamio ya le pasó precio, foto y stock. La venta se cierra caliente, no al otro día.</p>
+        <span class="antes">Antes: "mañana te confirmo" 😬</span>
+      </div>
+      <div class="card">
+        <div class="ico i-amar">📅</div>
+        <h3>Agenda que se llena sola</h3>
+        <p>Muestra los horarios libres, reserva el turno y lo confirma. Sin idas y vueltas, sin turnos pisados.</p>
+        <span class="antes">Antes: 10 mensajes para un turno 🥴</span>
+      </div>
+      <div class="card">
+        <div class="ico i-viol">💳</div>
+        <h3>Cobrá en el momento</h3>
+        <p>Manda el link de Mercado Pago dentro del chat y confirma cuando entra la plata. Menos ausentes, cero "me quedé sin efectivo".</p>
+        <span class="antes">Antes: perseguir el pago 🏃</span>
+      </div>
+      <div class="card">
+        <div class="ico i-coral">🛍️</div>
+        <h3>Catálogo siempre a mano</h3>
+        <p>Tus productos y servicios con precio actualizado, listos para enviar. El cliente elige sin que muevas un dedo.</p>
+        <span class="antes">Antes: mandar fotos una por una 📸</span>
+      </div>
+      <div class="card">
+        <div class="ico i-cielo">🔔</div>
+        <h3>Recordatorios automáticos</h3>
+        <p>Avisa el turno un día antes y reduce los "uy, me olvidé". Menos huecos vacíos = más facturación real.</p>
+        <span class="antes">Antes: sillón vacío 💸</span>
+      </div>
+      <div class="card">
+        <div class="ico i-lima">🙋</div>
+        <h3>Vos entrás cuando querés</h3>
+        <p>Wamio hace lo repetitivo; cuando hace falta trato humano, tomás la conversación desde tu bandeja. Lo mejor de los dos mundos.</p>
+        <span class="antes">Antes: pegado al teléfono 📱</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-band pad">
+    <div class="wrap stats">
+      <div><div class="n">24/7</div><div class="l">Atención sin descanso ni feriados</div></div>
+      <div><div class="n">&lt;1 min</div><div class="l">Lo que tarda en responder una consulta</div></div>
+      <div><div class="n">$0</div><div class="l">Comisión por venta: lo tuyo es tuyo</div></div>
+    </div>
+  </div>
+
+  <!-- CÓMO FUNCIONA -->
+  <section class="pad" id="como">
+    <div class="wrap center">
+      <span class="eyebrow">Simple de verdad</span>
+      <h2 class="sec-title">De cero a vendiendo en una tarde ☕</h2>
+      <p class="sec-intro">Sin apps que bajar tus clientes, sin cambiar de número. Es tu WhatsApp de siempre, con superpoderes.</p>
+    </div>
+    <div class="wrap pasos">
+      <div class="paso">
+        <h3>Conectá tu WhatsApp</h3>
+        <p>Escaneás un QR con el número del comercio y listo. Nada de trámites con Meta.</p>
+      </div>
+      <div class="paso">
+        <h3>Cargá tu catálogo</h3>
+        <p>Subís productos, servicios, precios y horarios desde un panel simple. Sin tocar código.</p>
+      </div>
+      <div class="paso">
+        <h3>Wamio atiende solo</h3>
+        <p>Responde, muestra el catálogo, agenda turnos y envía el link de pago automáticamente.</p>
+      </div>
+      <div class="paso">
+        <h3>Mirá crecer tus ventas</h3>
+        <p>Vos te dedicás a atender bien; los mensajes, turnos y cobros ya están resueltos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARA QUIÉN -->
+  <section class="pad" id="quien" style="background:var(--menta); border-block:4px solid var(--tinta);">
+    <div class="wrap split">
+      <div>
+        <span class="eyebrow">Pensado para el comercio de barrio</span>
+        <h2 class="sec-title">Si vendés o das turnos por WhatsApp, es para vos 💚</h2>
+        <p class="sec-intro">Wamio nació para los negocios que atienden por chat todo el día y no dan abasto. Nada de sistemas gigantes: simple, en tu idioma y a tu medida.</p>
+        <div class="rubros">
+          <span class="rubro">🐾 Veterinarias</span>
+          <span class="rubro">🛒 Petshops</span>
+          <span class="rubro">💊 Farmacias</span>
+          <span class="rubro">✂️ Peluquerías & estética</span>
+          <span class="rubro">🌱 Viveros</span>
+          <span class="rubro">🍰 Y más…</span>
+        </div>
+      </div>
+      <div class="card-highlight">
+        <div class="big">🔒 Tus datos son 100% tuyos</div>
+        <p style="color:var(--gris); margin-bottom:1rem;">Wamio es <strong>self-hosted</strong>: corre en tu propio servidor. Tu lista de clientes, tus ventas y tus chats no viven en la nube de un tercero que después te cobra por ellos.</p>
+        <ul class="checklist">
+          <li><span class="tick">✓</span> Sin comisiones por cada venta</li>
+          <li><span class="tick">✓</span> Sin depender de la API oficial de Meta</li>
+          <li><span class="tick">✓</span> Panel de administración incluido</li>
+          <li><span class="tick">✓</span> Cobros con Mercado Pago integrados</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="pad cta-final" id="empezar">
+    <div class="wrap">
+      <div class="cta-box">
+        <span class="spark" style="top:18px; left:26px;">✦</span>
+        <span class="spark" style="top:30px; right:40px;">💥</span>
+        <span class="spark" style="bottom:20px; left:60px;">⭐</span>
+        <span class="spark" style="bottom:26px; right:30px;">✨</span>
+        <h2>¿Listo para que tu WhatsApp trabaje por vos?</h2>
+        <p>Sumate a los comercios que dejaron de perder ventas por no llegar a responder. Empezá hoy, vendé esta misma semana.</p>
+        <div class="btns">
+          <a href="#" class="btn btn--verde">Probar Wamio gratis 🚀</a>
+          <a href="#" class="btn btn--coral">Agendar una demo 👋</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <a href="#" class="logo"><span class="dot">💬</span> Wamio</a>
+        <div class="nav-links" style="color:#cfe9df;">
+          <a href="#beneficios">Beneficios</a>
+          <a href="#como">Cómo funciona</a>
+          <a href="#quien">Para quién</a>
+          <a href="#empezar">Empezar</a>
+        </div>
+      </div>
+      <p class="foot-note">Wamio · Vender por WhatsApp nunca fue tan fácil. Catálogo, turnos y cobros, en piloto automático. Hecho con 💚 para el comercio de barrio.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
