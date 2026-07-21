@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wamio · Mi panel</title>
+<meta name="description" content="Panel del comercio: productos, servicios, turnos y pedidos." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login" class="login-wrap" hidden>
+    <form id="login-form" class="login-card">
+      <div class="brand"><span class="dot">💬</span> Wamio</div>
+      <h1>Ingresá a tu panel</h1>
+      <p class="muted">Gestioná tus productos, turnos y pedidos.</p>
+      <label>Email
+        <input type="email" id="email" autocomplete="username" required />
+      </label>
+      <label>Contraseña
+        <input type="password" id="password" autocomplete="current-password" required />
+      </label>
+      <button class="btn btn--verde" type="submit">Entrar</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+  </div>
+
+  <!-- APP -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="dot">💬</span> Wamio</div>
+      <div class="topbar-right">
+        <span id="comercio-nombre" class="chip"></span>
+        <button id="logout" class="btn btn--ghost">Salir</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <nav class="side">
+        <button class="nav-item" data-view="inicio">🏠 Inicio</button>
+        <button class="nav-item" data-view="productos">🛍️ Productos</button>
+        <button class="nav-item" data-view="servicios">✂️ Servicios</button>
+        <button class="nav-item" data-view="turnos">📅 Turnos</button>
+        <button class="nav-item" data-view="pedidos">🧾 Pedidos</button>
+      </nav>
+      <main id="main" class="main"></main>
+    </div>
+  </div>
+
+  <!-- MODAL genérico para crear/editar -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="modal-title">Editar</h2>
+        <button id="modal-close" class="btn btn--ghost">✕</button>
+      </div>
+      <form id="modal-form"></form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

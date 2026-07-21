@@ -9,6 +9,9 @@ COPY landing/nginx.conf /etc/nginx/conf.d/default.conf
 # Página de marketing (lo primero que ve el visitante en la raíz del dominio).
 COPY landing/index.html /usr/share/nginx/html/index.html
 
+# Panel del comercio (SPA servida en /app/).
+COPY app/ /usr/share/nginx/html/app/
+
 EXPOSE 8080
 
 # Chequeo de salud del contenedor (wget de busybox, resuelto por PATH).
