@@ -4,6 +4,10 @@ Plataforma self-hosted de venta y reservas por WhatsApp para comercios de barrio
 (veterinarias, petshops, farmacias). Catálogo, turnos con calendario y cobro con
 Mercado Pago, todo orquestado sin depender de la API oficial de Meta.
 
+> 📖 **¿Cómo se usa la plataforma y cuál es el flujo de trabajo?**
+> Ver **[GUIA.md](GUIA.md)** — manual completo de uso (rutas, primeros pasos y
+> recorrido de punta a punta). Este README cubre la instalación y la parte técnica.
+
 ## Stack
 
 | Servicio      | Rol                                                              |
@@ -13,6 +17,7 @@ Mercado Pago, todo orquestado sin depender de la API oficial de Meta.
 | `postgres`    | Base de datos compartida (una DB por servicio)                    |
 | `redis`       | Caché/colas para Evolution API, n8n y Directus                    |
 | `directus`    | Panel admin auto-generado sobre la DB `wamio` (productos, turnos) |
+| `landing`     | Landing pública + router del dominio (raíz, `/admin`, `/n8n`, `/api`) |
 | `chatwoot`    | *(opcional)* bandeja de atención humana para handoff              |
 
 ## Imágenes Docker y CI
@@ -60,11 +65,24 @@ docker compose up -d
 docker compose --profile chatwoot up -d
 ```
 
-Servicios disponibles:
-- Evolution API: http://localhost:8080
+En producción se entra por **un solo dominio** (contenedor `landing`), que
+enruta cada servicio:
+
+| Ruta pública            | Servicio      |
+|-------------------------|---------------|
+| `/`                     | Landing       |
+| `/admin/`               | Directus      |
+| `/n8n/`                 | n8n           |
+| `/api/`                 | Evolution API (REST) |
+
+Para depurar en el servidor, cada servicio también queda en su puerto directo:
+- Landing/router: http://localhost:8060
+- Evolution API (Manager para el QR): http://localhost:8054/manager
 - n8n: http://localhost:5678
 - Directus: http://localhost:8055
-- Chatwoot (opcional): http://localhost:3000
+- Chatwoot (opcional): http://localhost:3056
+
+> Detalle de rutas, accesos y flujo de trabajo: **[GUIA.md](GUIA.md)**.
 
 ## Primeros pasos
 
@@ -198,17 +216,22 @@ contraseña en el `.env`.
 
 ### Detrás de Nginx Proxy Manager (dominio público)
 
-Con el stack detrás de NPM en `https://tu-dominio`, ajustá en el `.env` las
-variables de n8n para que los webhooks usen la URL pública:
+El stack expone **un único punto de entrada** (contenedor `landing`), que
+enruta internamente `/`, `/admin`, `/n8n` y `/api`. En el `.env`:
 
 ```
-N8N_HOST=tu-dominio.com
+WAMIO_PUBLIC_URL=https://tu-dominio.com
+N8N_HOST=tu-dominio.com          # sin https://
 N8N_PROTOCOL=https
-N8N_WEBHOOK_URL=https://tu-dominio.com/
 ```
 
-En NPM, cada Proxy Host apunta al contenedor por nombre y puerto interno
-(`wamio_n8n:5678`, `wamio_evolution_api:8080`, `wamio_directus:8055`) con SSL y
-"Websockets Support" activado (n8n y Directus lo necesitan). Como los 4
-servicios exponen puertos distintos, usá un subdominio por servicio
-(ej. `n8n.`, `api.`, `admin.`) en vez de un solo dominio para todos.
+En NPM alcanza con **un solo Proxy Host**:
+
+- **Domain Names:** `tu-dominio.com`
+- **Forward Hostname / IP:** `wamio_landing` · **Forward Port:** `8080`
+- **Websockets Support:** ✅ activado (n8n y Directus lo necesitan)
+- **SSL:** Let's Encrypt + "Force SSL"
+
+El router del contenedor `landing` reenvía cada ruta al servicio interno con los
+headers correctos, así que no hace falta un Proxy Host por servicio. El detalle
+de rutas y accesos está en **[GUIA.md](GUIA.md)**.

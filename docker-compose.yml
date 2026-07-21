@@ -15,6 +15,28 @@ volumes:
 services:
 
   # ============================================================
+  # LANDING + ROUTER PÚBLICO (único punto de entrada del dominio)
+  # NPM apunta https://wamio.pymesenlinea.com.ar -> wamio_landing:8080.
+  # Reparte:  /  -> landing · /admin -> Directus · /n8n -> n8n · /api -> Evolution
+  # ============================================================
+  landing:
+    image: ghcr.io/pel-matiasvaldivia/wamio/landing:${WAMIO_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+    container_name: wamio_landing
+    restart: unless-stopped
+    ports:
+      # Puerto local para probar/depurar directo; en producción entra por NPM.
+      - "8060:8080"
+    depends_on:
+      - directus
+      - n8n
+      - evolution-api
+    networks:
+      - wamio_net
+
+  # ============================================================
   # BASE DE DATOS COMPARTIDA
   # ============================================================
   postgres:
@@ -83,6 +105,8 @@ services:
       - "8054:8080"
     environment:
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      # URL pública del gateway (para armar links de QR/media). Se sirve bajo /api.
+      SERVER_URL: ${WAMIO_PUBLIC_URL}/api
       DATABASE_PROVIDER: postgresql
       DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evolution?schema=public
       DATABASE_SAVE_DATA_INSTANCE: "true"
@@ -91,8 +115,9 @@ services:
       CACHE_REDIS_URI: redis://:${REDIS_PASSWORD}@redis:6379/1
       CACHE_REDIS_PREFIX_KEY: evolution
       CACHE_LOCAL_ENABLED: "false"
-      # Apunta al webhook que centraliza todo en n8n
-      WEBHOOK_GLOBAL_URL: http://n8n:5678/webhook/wamio-whatsapp-in
+      # Webhook interno hacia n8n. Como n8n corre bajo el prefijo /n8n/, la ruta
+      # interna también lo lleva (N8N_PATH monta TODO —incluidos webhooks— ahí).
+      WEBHOOK_GLOBAL_URL: http://n8n:5678/n8n/webhook/wamio-whatsapp-in
       WEBHOOK_GLOBAL_ENABLED: "true"
       WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS: "true"
     volumes:
@@ -121,7 +146,12 @@ services:
       N8N_HOST: ${N8N_HOST}
       N8N_PROTOCOL: ${N8N_PROTOCOL}
       N8N_PORT: 5678
-      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      # n8n se sirve bajo /n8n/ detrás del router. Con N8N_PATH monta el editor,
+      # las APIs y los webhooks bajo ese prefijo y arma bien todos los links.
+      N8N_PATH: /n8n/
+      N8N_EDITOR_BASE_URL: ${WAMIO_PUBLIC_URL}/n8n/
+      WEBHOOK_URL: ${WAMIO_PUBLIC_URL}/n8n/
+      N8N_PROXY_HOPS: 1
       GENERIC_TIMEZONE: America/Argentina/Mendoza
       TZ: America/Argentina/Mendoza
       DB_TYPE: postgresdb
@@ -165,6 +195,9 @@ services:
       SECRET: ${DIRECTUS_SECRET}
       ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
       ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      # Se sirve bajo /admin detrás del router: Directus arma sus assets y links
+      # con este prefijo. El router le quita /admin/ antes de pasarle el request.
+      PUBLIC_URL: ${WAMIO_PUBLIC_URL}/admin
       DB_CLIENT: pg
       DB_HOST: postgres
       DB_PORT: 5432
