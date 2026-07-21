@@ -195,9 +195,9 @@ services:
       SECRET: ${DIRECTUS_SECRET}
       ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
       ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
-      # Se sirve bajo /admin detrás del router: Directus arma sus assets y links
-      # con este prefijo. El router le quita /admin/ antes de pasarle el request.
-      PUBLIC_URL: ${WAMIO_PUBLIC_URL}/admin
+      # Directus es la app por defecto del router: su API vive en la raíz del
+      # dominio y su panel en /admin (nativo). PUBLIC_URL = dominio, sin sufijo.
+      PUBLIC_URL: ${WAMIO_PUBLIC_URL}
       DB_CLIENT: pg
       DB_HOST: postgres
       DB_PORT: 5432
